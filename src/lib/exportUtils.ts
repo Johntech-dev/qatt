@@ -3,7 +3,7 @@ import { AttendanceRecord, Session } from './types';
 export function exportAttendanceToCSV(
   records: AttendanceRecord[],
   fileName: string = 'attendance_report.csv',
-  sessionInfo?: Session
+  sessionInfo?: Partial<Session>
 ) {
   if (!records || records.length === 0) {
     alert('No attendance records available to export.');

@@ -232,6 +232,7 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
         expiresAt: currentSession.expiresAt,
         isActive: currentSession.isActive,
         createdAt: currentSession.createdAt,
+        lecturerId: currentSession.lecturerId || '',
         lecturerName: currentSession.lecturerName || '',
       }
     );
