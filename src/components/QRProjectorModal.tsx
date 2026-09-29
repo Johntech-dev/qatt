@@ -15,6 +15,7 @@ import {
   PlusCircle,
   StopCircle,
   Sparkles,
+  Play,
 } from 'lucide-react';
 
 interface ProjectorSession {
@@ -121,6 +122,11 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
   // Real API call to close session
   const endSession = async () => {
     try {
+      // Immediately zero the timer and mark inactive in local state
+      setTimeLeft(0);
+      const nowIso = new Date().toISOString();
+      setCurrentSession((prev) => ({ ...prev, isActive: false, expiresAt: nowIso }));
+
       const res = await fetch('/api/sessions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -128,12 +134,61 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
         body: JSON.stringify({ sessionId: currentSession.id, action: 'close' }),
       });
       if (res.ok) {
-        setCurrentSession((prev) => ({ ...prev, isActive: false }));
+        const data = await res.json();
+        if (data.session) {
+          setCurrentSession((prev) => ({
+            ...prev,
+            isActive: false,
+            expiresAt: data.session.expiresAt,
+          }));
+        }
       }
     } catch (err) {
       console.error('Error closing session:', err);
     }
   };
+
+  // Real API call to resume / reactivate session
+  const resumeSession = async (additionalMinutes?: number) => {
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          sessionId: currentSession.id,
+          action: 'resume',
+          additionalMinutes,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.session) {
+          const remainingSecs = Math.max(
+            0,
+            Math.floor((new Date(data.session.expiresAt).getTime() - Date.now()) / 1000)
+          );
+          setTimeLeft(remainingSecs);
+          setCurrentSession((prev) => ({
+            ...prev,
+            expiresAt: data.session.expiresAt,
+            isActive: true,
+            qrPayload: data.session.qrPayload || prev.qrPayload,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error resuming session:', err);
+    }
+  };
+
+  // Auto-activate if opened on the projector and time is still remaining
+  useEffect(() => {
+    const isFuture = new Date(currentSession.expiresAt).getTime() > Date.now();
+    if (!currentSession.isActive && isFuture) {
+      resumeSession();
+    }
+  }, []);
 
   // Real API call to extend session by additional minutes
   const extendSession = async (additionalMinutes: number = 5) => {
@@ -151,10 +206,18 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
       if (res.ok) {
         const data = await res.json();
         if (data.session) {
+          const newExpiresAt = data.session.expiresAt;
+          const remainingSecs = Math.max(
+            0,
+            Math.floor((new Date(newExpiresAt).getTime() - Date.now()) / 1000)
+          );
+          setTimeLeft(remainingSecs);
           setCurrentSession((prev) => ({
             ...prev,
-            expiresAt: data.session.expiresAt,
+            expiresAt: newExpiresAt,
             isActive: true,
+            durationMinutes: data.session.durationMinutes || prev.durationMinutes + additionalMinutes,
+            qrPayload: data.session.qrPayload || prev.qrPayload,
           }));
         }
       }
@@ -165,6 +228,11 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
 
   // Ticking countdown timer
   useEffect(() => {
+    if (!currentSession.isActive) {
+      setTimeLeft(0);
+      return;
+    }
+
     const updateCountdown = () => {
       const remainingSeconds = Math.max(
         0,
@@ -238,7 +306,8 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
     );
   };
 
-  const isExpired = timeLeft <= 0 || !currentSession.isActive;
+  const isTimeUp = timeLeft <= 0;
+  const isExpired = isTimeUp || !currentSession.isActive;
 
   return (
     <div
@@ -309,12 +378,12 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
                       fontWeight: 700,
                       padding: '2px 8px',
                       borderRadius: 4,
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      color: '#f87171',
-                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      background: isTimeUp ? 'rgba(239, 68, 68, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                      color: isTimeUp ? '#f87171' : '#facc15',
+                      border: `1px solid ${isTimeUp ? 'rgba(239, 68, 68, 0.3)' : 'rgba(234, 179, 8, 0.3)'}`,
                     }}
                   >
-                    Session Expired
+                    {isTimeUp ? 'Session Expired' : 'Session Paused'}
                   </span>
                 ) : (
                   <span
@@ -394,28 +463,71 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
             >
               <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%', height: 'auto', borderRadius: 14 }} />
 
-              {/* Expired Overlay if session timed out */}
+              {/* Expired / Paused Overlay */}
               {isExpired && (
                 <div
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'rgba(0, 0, 0, 0.9)',
-                    backdropFilter: 'blur(4px)',
+                    background: 'rgba(0, 0, 0, 0.92)',
+                    backdropFilter: 'blur(5px)',
                     borderRadius: 16,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: 20,
+                    padding: 24,
                     color: '#ffffff',
+                    zIndex: 10,
                   }}
                 >
-                  <AlertCircle style={{ width: 44, height: 44, color: '#f87171', marginBottom: 8 }} />
-                  <p style={{ fontWeight: 800, fontSize: 18, margin: '0 0 6px' }}>Session Closed</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    This QR code is no longer accepting new attendance records.
+                  <AlertCircle style={{ width: 44, height: 44, color: isTimeUp ? '#f87171' : '#facc15', marginBottom: 8 }} />
+                  <p style={{ fontWeight: 800, fontSize: 18, margin: '0 0 6px' }}>
+                    {isTimeUp ? 'Session Expired' : 'Session Paused'}
                   </p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 16px', maxWidth: 280, textAlign: 'center' }}>
+                    {isTimeUp
+                      ? 'The allocated duration has ended. Extend time below to accept more check-ins.'
+                      : 'Attendance is temporarily paused or was closed. Click Resume to reopen.'}
+                  </p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => resumeSession()}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '9px 18px',
+                        borderRadius: 8,
+                        background: 'var(--accent)',
+                        color: '#ffffff',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Play style={{ width: 13, height: 13, fill: 'currentColor' }} /> Resume Session
+                    </button>
+                    <button
+                      onClick={() => extendSession(5)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '9px 14px',
+                        borderRadius: 8,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <PlusCircle style={{ width: 14, height: 14 }} /> +5 Mins
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -481,6 +593,28 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
 
               {/* Quick Session Controls */}
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                {isExpired && (
+                  <button
+                    onClick={() => resumeSession()}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: 'var(--accent)',
+                      color: '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Play style={{ width: 13, height: 13, fill: 'currentColor' }} /> Resume
+                  </button>
+                )}
                 <button
                   onClick={() => extendSession(5)}
                   style={{
@@ -493,9 +627,9 @@ export const QRProjectorModal: React.FC<QRProjectorModalProps> = ({ session: ini
                     borderRadius: 8,
                     fontSize: 12,
                     fontWeight: 600,
-                    background: 'var(--accent)',
+                    background: isExpired ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent)',
                     color: '#ffffff',
-                    border: 'none',
+                    border: isExpired ? '1px solid var(--border)' : 'none',
                     cursor: 'pointer',
                   }}
                 >

@@ -252,14 +252,14 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20, boxSizing: 'border-box' }}>
       {/* Top Banner / Student Profile */}
       <div
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: 14,
-          padding: '24px 28px',
+          padding: '24px 24px',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -267,8 +267,8 @@ export default function StudentDashboard() {
           gap: 16,
         }}
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
             <span
               style={{
                 fontSize: 10,
@@ -288,10 +288,10 @@ export default function StudentDashboard() {
               Federal Polytechnic, Ado-Ekiti
             </span>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', wordBreak: 'break-word' }}>
             {user?.name}
           </h1>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12, color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: 'var(--text-secondary)' }}>
             <span>Matric: <strong style={{ color: 'var(--text-primary)' }}>{user?.matricNumber || 'N/A'}</strong></span>
             <span>·</span>
             <span>Level: <strong style={{ color: 'var(--text-primary)' }}>{user?.level || 'ND I'}</strong></span>
@@ -301,7 +301,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <div
             style={{
               padding: '12px 18px',
@@ -309,6 +309,7 @@ export default function StudentDashboard() {
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               textAlign: 'center',
+              flex: '1 1 120px',
             }}
           >
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -323,6 +324,7 @@ export default function StudentDashboard() {
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               textAlign: 'center',
+              flex: '1 1 120px',
             }}
           >
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)' }}>
@@ -333,13 +335,18 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Navigation Tabs - Horizontally scrollable on mobile without page overflow */}
       <div
         style={{
           display: 'flex',
-          gap: 6,
+          gap: 8,
           borderBottom: '1px solid var(--border)',
-          paddingBottom: 4,
+          paddingBottom: 6,
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          width: '100%',
         }}
       >
         <button
@@ -357,6 +364,8 @@ export default function StudentDashboard() {
             alignItems: 'center',
             gap: 8,
             transition: 'all 0.15s ease',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           <QrCode style={{ width: 15, height: 15 }} />
@@ -378,6 +387,8 @@ export default function StudentDashboard() {
             alignItems: 'center',
             gap: 8,
             transition: 'all 0.15s ease',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           <BookOpen style={{ width: 15, height: 15 }} />
@@ -399,6 +410,8 @@ export default function StudentDashboard() {
             alignItems: 'center',
             gap: 8,
             transition: 'all 0.15s ease',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           <Search style={{ width: 15, height: 15 }} />
@@ -420,6 +433,8 @@ export default function StudentDashboard() {
             alignItems: 'center',
             gap: 8,
             transition: 'all 0.15s ease',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           <Clock style={{ width: 15, height: 15 }} />
@@ -429,7 +444,7 @@ export default function StudentDashboard() {
 
       {/* TAB 1: MARK ATTENDANCE */}
       {activeTab === 'attendance' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
           {/* Card 1: Check in by QR or Session Code */}
           <div
             style={{
@@ -689,7 +704,7 @@ export default function StudentDashboard() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
               {enrollments.map((enr) => {
                 const countAttended = attendanceHistory.filter((a) => a.session?.course?.code === enr.course.code).length;
                 return (
@@ -870,7 +885,7 @@ export default function StudentDashboard() {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
               {catalog.map((course) => {
                 const existingEnrollment = isEnrolled(course.id);
                 return (
@@ -1038,7 +1053,8 @@ export default function StudentDashboard() {
                 overflow: 'hidden',
               }}
             >
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', minWidth: 540, borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
                     <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>Course</th>
@@ -1093,6 +1109,7 @@ export default function StudentDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

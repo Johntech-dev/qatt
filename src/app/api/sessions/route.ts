@@ -109,19 +109,79 @@ export async function PATCH(req: NextRequest) {
     if (action === 'close') {
       const session = await prisma.session.update({
         where: { id: sessionId },
-        data: { isActive: false },
+        data: {
+          isActive: false,
+          expiresAt: new Date(),
+        },
       });
       return NextResponse.json({ session });
     }
 
-    if (action === 'extend' && additionalMinutes) {
+    if (action === 'resume' || action === 'activate') {
       const session = await prisma.session.findUnique({ where: { id: sessionId } });
       if (!session) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-      const newExpiry = new Date(session.expiresAt.getTime() + additionalMinutes * 60 * 1000);
+      // If already expired or in the past, extend by at least 10 minutes from now
+      const isPast = new Date(session.expiresAt).getTime() <= Date.now();
+      const newExpiry = isPast
+        ? new Date(Date.now() + (Number(additionalMinutes) || 10) * 60 * 1000)
+        : session.expiresAt;
+
+      // Ensure no conflicting active sessions for the same course
+      await prisma.session.updateMany({
+        where: { courseId: session.courseId, id: { not: sessionId }, isActive: true },
+        data: { isActive: false },
+      });
+
+      let newQrPayload = session.qrPayload;
+      try {
+        const parsed = JSON.parse(session.qrPayload);
+        parsed.expiresAt = newExpiry.toISOString();
+        newQrPayload = JSON.stringify(parsed);
+      } catch {}
+
       const updated = await prisma.session.update({
         where: { id: sessionId },
-        data: { expiresAt: newExpiry },
+        data: {
+          isActive: true,
+          expiresAt: newExpiry,
+          qrPayload: newQrPayload,
+        },
+      });
+      return NextResponse.json({ session: updated });
+    }
+
+    if (action === 'extend') {
+      const session = await prisma.session.findUnique({ where: { id: sessionId } });
+      if (!session) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+      const mins = Number(additionalMinutes) || 5;
+      const currentExpiryMs = new Date(session.expiresAt).getTime();
+      // If current expiry is past OR session is inactive, add minutes to NOW
+      const baseMs = (!session.isActive || currentExpiryMs <= Date.now()) ? Date.now() : currentExpiryMs;
+      const newExpiry = new Date(baseMs + mins * 60 * 1000);
+
+      // Ensure no conflicting active sessions for the same course
+      await prisma.session.updateMany({
+        where: { courseId: session.courseId, id: { not: sessionId }, isActive: true },
+        data: { isActive: false },
+      });
+
+      let newQrPayload = session.qrPayload;
+      try {
+        const parsed = JSON.parse(session.qrPayload);
+        parsed.expiresAt = newExpiry.toISOString();
+        newQrPayload = JSON.stringify(parsed);
+      } catch {}
+
+      const updated = await prisma.session.update({
+        where: { id: sessionId },
+        data: {
+          expiresAt: newExpiry,
+          isActive: true,
+          durationMinutes: (session.durationMinutes || 15) + mins,
+          qrPayload: newQrPayload,
+        },
       });
       return NextResponse.json({ session: updated });
     }

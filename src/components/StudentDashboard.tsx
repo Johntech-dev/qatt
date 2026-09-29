@@ -261,6 +261,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onOpenScanne
           background: 'var(--bg-card)',
           gap: 2,
           alignSelf: 'flex-start',
+          maxWidth: '100%',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {tabs.map((tab) => (
@@ -278,6 +281,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onOpenScanne
               cursor: 'pointer',
               fontFamily: 'inherit',
               transition: 'background 0.15s, color 0.15s',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {tab.label}
@@ -473,8 +478,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onOpenScanne
               No recorded attendances yet. Scan a QR code to log your first session.
             </p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: 500, borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr>
                     {['Course', 'Topic', 'Date & Time', 'Method', 'Status'].map((h, i) => (
