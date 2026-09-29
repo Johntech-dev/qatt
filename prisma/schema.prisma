@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceMethod {
+  QR_SCAN
+  SESSION_CODE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  matricNumber String?  @unique
+  level        String?
+  department   String
+  institution  String   @default("Federal Polytechnic, Ado-Ekiti")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  courses     Course[]           @relation("LecturerCourses")
+  enrollments Enrollment[]
+  attendance  AttendanceRecord[]
+  sessions    Session[]
+
+  @@map("users")
+}
+
+model Course {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  title            String
+  department       String
+  semester         String
+  units            Int      @default(3)
+  requiresApproval Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  lecturerId  String
+  lecturer    User         @relation("LecturerCourses", fields: [lecturerId], references: [id])
+  enrollments Enrollment[]
+  sessions    Session[]
+  attendance  AttendanceRecord[]
+
+  @@map("courses")
+}
+
+model Enrollment {
+  id         String           @id @default(cuid())
+  status     EnrollmentStatus @default(PENDING)
+  enrolledAt DateTime         @default(now())
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId])
+  @@map("enrollments")
+}
+
+model Session {
+  id              String   @id @default(cuid())
+  topic           String
+  token           String   @unique
+  qrPayload       String
+  durationMinutes Int      @default(15)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  courseId   String
+  course     Course @relation(fields: [courseId], references: [id])
+
+  lecturerId String
+  lecturer   User   @relation(fields: [lecturerId], references: [id])
+
+  attendance AttendanceRecord[]
+
+  @@map("sessions")
+}
+
+model AttendanceRecord {
+  id       String           @id @default(cuid())
+  markedAt DateTime         @default(now())
+  method   AttendanceMethod @default(QR_SCAN)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id])
+
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id])
+
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, sessionId])
+  @@map("attendance_records")
+}

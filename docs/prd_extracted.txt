@@ -1,0 +1,114 @@
+PRODUCT REQUIREMENTS DOCUMENT
+Student Attendance Management System Using QR Code Technology
+Author
+Sanya Ololade Timileyin (FPA/CS/24/03-0108)
+Department
+Software & Web Development, Federal Polytechnic, Ado-Ekiti
+Supervisor
+Mrs. Abiodun
+Version
+1.0
+Status
+Draft for Development
+1. Overview
+The Student Attendance Management System is a web application that replaces manual, paper-based attendance with a QR code based digital process. A lecturer generates a unique QR code for each lecture session; students scan the code with their smartphone browser to mark their attendance instantly. The system stores attendance records in a database and gives lecturers and administrators real-time reports.
+2. Problem Statement
+Manual roll calls and sign-in sheets waste lecture time.
+Students can sign in for absent classmates (proxy attendance).
+Paper registers are easily lost, damaged, or hard to total up.
+Lecturers have no real-time view of attendance trends.
+3. Goals
+Let lecturers generate a unique, time-bound QR code per session.
+Let students mark attendance in seconds by scanning the code.
+Prevent proxy attendance through session-specific, expiring codes.
+Give lecturers and admins real-time, exportable attendance reports.
+Work on any device with a web browser — no app installation required.
+4. Users & Roles
+Administrator
+Manages student records, courses, and lecturer accounts.
+Lecturer
+Creates/owns courses, approves or auto-enrolls students, generates QR codes, views attendance reports for their own courses.
+Student
+Registers/enrolls into a lecturer's course, then scans QR codes to mark attendance for that course only.
+5. Core Features
+Feature
+Description
+Priority
+Admin Dashboard
+Register/manage students, courses, and lecturer accounts.
+Must-have
+Course Creation
+A lecturer creates a course they teach (e.g. CSC 301), making it discoverable to students.
+Must-have
+Course Enrollment
+A student registers/enrolls into a specific lecturer's course before attendance for it can apply to them.
+Must-have
+Enrollment Approval
+Lecturer can view and, if required, approve students who registered for their course.
+Should-have
+QR Code Generation
+Lecturer generates a unique, time-bound QR code per session, tied to one course.
+Must-have
+QR Code Scanning
+Only students enrolled in that course can scan the code to mark attendance.
+Must-have
+Attendance Recording
+Each valid scan is saved to the database, linked to student + course + session.
+Must-have
+Real-Time Reports
+Lecturers/admins view live attendance data, filter by course/date, export data.
+Must-have
+Session Expiry
+QR codes expire after a set time window to prevent sharing/reuse.
+Must-have
+Student Attendance History
+Students view their own attendance record per enrolled course.
+Should-have
+Authentication
+Login for admin, lecturer, and student roles.
+Must-have
+Notifications
+Alert students/lecturers of low attendance (future enhancement).
+Nice-to-have
+6. User Flow
+6.1 One-Time Setup: Course Enrollment
+Lecturer logs in → creates a course (e.g. CSC 301 – Web Development).
+Student logs in → browses/searches available courses → registers/enrolls in the lecturer's course.
+Lecturer optionally reviews and approves the enrollment (or it's automatic, based on settings).
+Once enrolled, the student is permanently linked to that course for the semester.
+6.2 Recurring Flow: Taking Attendance
+Lecturer logs in → selects one of their courses → generates a session QR code.
+QR code is displayed on a projector or shared screen in class.
+Student opens the app → scans the QR code with their phone.
+System checks that the student is enrolled in that course, then validates the code and session window → records attendance.
+A student who is not enrolled in the course cannot mark attendance for it, even with the QR code.
+Lecturer/admin views real-time attendance report for that session.
+7. Technology Stack
+Frontend & Backend
+Next.js (full-stack), TypeScript, Tailwind CSS
+Database
+PostgreSQL hosted on Neon
+QR Code Generation
+QR Code Monkey
+Authentication
+Next.js Auth / session-based login
+Deployment / Hosting
+Vercel
+Version Control
+Git & GitHub
+8. Non-Functional Requirements
+Performance: attendance scan-to-save should complete in under 2 seconds.
+Usability: no app installation — works in any mobile browser.
+Security: QR codes are session-specific and time-bound; only enrolled students can mark attendance for a given course.
+Reliability: attendance data must persist accurately with no duplicate records.
+Scalability: should support multiple concurrent scans per session.
+9. Out of Scope (v1)
+Biometric or facial recognition verification.
+Native mobile app (iOS/Android).
+Integration with national ID or third-party school management systems.
+Geolocation-based attendance validation (future enhancement).
+10. Success Metrics
+Attendance capture time reduced from minutes to under 10 seconds per class.
+Zero recorded cases of proxy attendance during testing.
+100% of test attendance records accurately stored and retrievable.
+System successfully demonstrated on live devices during defense.
