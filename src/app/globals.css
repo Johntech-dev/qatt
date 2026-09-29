@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 /* ======================================
@@ -8,6 +9,7 @@
 
 @layer base {
   :root {
+    --font-outfit: 'Outfit', system-ui, -apple-system, sans-serif;
     /* Light mode */
     --bg: #f5f5f5;
     --bg-card: #ffffff;

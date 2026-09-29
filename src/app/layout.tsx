@@ -1,13 +1,6 @@
 import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
-
-const outfit = Outfit({
-  variable: '--font-outfit',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-});
 
 export const metadata: Metadata = {
   title: 'qatt. — Student Attendance Management System',
@@ -23,9 +16,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} dark h-full antialiased`}
+      className="dark h-full antialiased"
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full flex flex-col" style={{ fontFamily: 'var(--font-outfit), system-ui, sans-serif' }}>
         <Providers>{children}</Providers>
       </body>
